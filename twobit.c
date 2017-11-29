@@ -230,22 +230,37 @@ char byte_to_base(unsigned char byte, int offset) {
 char * twobit_sequence(TwoBit * ptr, const char * name, int start, int end) {
   struct twobit_index * seq = find_sequence(ptr->index, name);
   int size, rsize;
-  char * result;
+  char * result, * seq_dest;
   int i;
 
   if (!seq) 
     return NULL;
 
+  if (start > end)
+    return NULL;
+
   size = seq->size;
   rsize = end - start + 1;
-  result = (char*) malloc((rsize + 1) * sizeof(char));
+  seq_dest = result = (char*) malloc((rsize + 1) * sizeof(char));
+  if(result == NULL) return NULL;
   memset(result, 'N', rsize * sizeof(char)); /* initialize */
   result[rsize] = '\0';
 
-  if (end >= size) {
-    end = size - 1;
-    rsize = end - start + 1;
-  }
+  if (start < 0)
+    {
+      rsize += start;
+      seq_dest -= start;
+      start = 0;
+    }
+  if (end < 0)
+    {
+      rsize = 0;
+      seq_dest = result;
+      end = 0;
+    };
+
+  if(start + rsize > size)
+    rsize = size - start;
 
   /* fill sequence */
   {
@@ -259,7 +274,7 @@ char * twobit_sequence(TwoBit * ptr, const char * name, int start, int end) {
     
     i = 0;
     while (i < rsize) {
-      result[i] = byte_to_base(*block, offset);
+      seq_dest[i] = byte_to_base(*block, offset);
 
       ++i;
       ++offset;
@@ -286,7 +301,7 @@ char * twobit_sequence(TwoBit * ptr, const char * name, int start, int end) {
       }
 
       for (j = 0, k = bstart; j < bsize && k <= end; ++j, ++k)
-	result[k - start] = 'N';
+	seq_dest[k - start] = 'N';
     }
   }
 
